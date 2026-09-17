@@ -12,6 +12,7 @@ namespace winrt
 namespace util
 {
     using namespace robmikh::common::desktop;
+    using namespace robmikh::common::uwp;
 }
 
 int __stdcall WinMain(HINSTANCE, HINSTANCE, PSTR, int)
@@ -25,13 +26,13 @@ int __stdcall WinMain(HINSTANCE, HINSTANCE, PSTR, int)
     // Create the DispatcherQueue that the compositor needs to run
     auto controller = util::CreateDispatcherQueueControllerForCurrentThread();
 
-    // Create our window and visual tree
+    // Init D3D11
+    auto d3dDevice = util::CreateD3D11Device();
+    auto device = CreateDirect3DDevice(d3dDevice.as<IDXGIDevice>().get());
+
+    // Create our window
     auto compositor = winrt::Compositor();
-    auto root = compositor.CreateContainerVisual();
-    root.RelativeSizeAdjustment({ 1.0f, 1.0f });
-    auto window = MainWindow(L"WGCWindowExclusionDemo", 800, 600, compositor);
-    auto target = window.CreateWindowTarget(compositor);
-    target.Root(root);
+    auto window = MainWindow(L"WGCWindowExclusionDemo", 800, 600, compositor, device);
 
     // Message pump
     MSG msg = {};

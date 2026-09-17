@@ -112,11 +112,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="SimpleCapture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BorderWindow.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="SimpleCapture.h" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="app.manifest" />

@@ -3,11 +3,16 @@
 
 namespace winrt
 {
+    using namespace Windows::UI;
     using namespace Windows::UI::Composition;
+    using namespace Windows::Graphics::DirectX;
+    using namespace Windows::Graphics::DirectX::Direct3D11;
+    using namespace Windows::Graphics::Capture;
 }
 
 namespace util
 {
+    using namespace robmikh::common::desktop;
     using namespace robmikh::common::desktop::controls;
 }
 
@@ -30,7 +35,7 @@ void MainWindow::RegisterWindowClass()
     winrt::check_bool(RegisterClassExW(&wcex));
 }
 
-MainWindow::MainWindow(std::wstring const& titleString, int width, int height, winrt::Compositor const& compositor)
+MainWindow::MainWindow(std::wstring const& titleString, int width, int height, winrt::Compositor const& compositor, winrt::IDirect3DDevice const& device)
 {
     auto instance = winrt::check_pointer(GetModuleHandleW(nullptr));
 
@@ -52,6 +57,36 @@ MainWindow::MainWindow(std::wstring const& titleString, int width, int height, w
     m_borderWindow->BorderThickness(5);
 
     CreateControls(instance);
+
+    // Hookup the capture -- The exclusion API only works with display capture,
+    // so we'll just capture the primary monitor.
+    auto monitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
+    auto item = util::CreateCaptureItemForMonitor(monitor);
+    m_capture = std::make_unique<SimpleCapture>(device, item, winrt::DirectXPixelFormat::B8G8R8A8UIntNormalized);
+    m_capture->IsBorderRequired(false);
+    m_capture->StartCapture();
+
+    // Setup our visual tree
+    m_root = compositor.CreateContainerVisual();
+    m_root.RelativeSizeAdjustment({ 1.0f, 1.0f });
+    m_root.Size({ 0.0f, -60.0f });
+    m_root.Offset({ 0.0f, 60.0f, 0.0f });
+    m_target = CreateWindowTarget(compositor);
+    m_target.Root(m_root);
+    m_content = compositor.CreateSpriteVisual();
+    m_content.Size({ -50.0f, -50.0f });
+    m_content.Offset({ 25.0f, 25.0f, 0.0f });
+    m_content.RelativeSizeAdjustment({ 1.0f, 1.0f });
+    auto brush = compositor.CreateSurfaceBrush();
+    brush.HorizontalAlignmentRatio(0.5f);
+    brush.VerticalAlignmentRatio(0.5f);
+    brush.Stretch(winrt::CompositionStretch::Uniform);
+    brush.Surface(m_capture->CreateSurface(compositor));
+    m_content.Brush(brush);
+    auto shadow = compositor.CreateDropShadow();
+    shadow.Mask(brush);
+    m_content.Shadow(shadow);
+    m_root.Children().InsertAtTop(m_content);
 
     ShowWindow(m_window, SW_SHOW);
     UpdateWindow(m_window);
@@ -151,5 +186,15 @@ LRESULT MainWindow::WindowSelectionButtonMessageHandler(UINT const message, WPAR
 
 void MainWindow::OnWindowSelected(HWND window)
 {
-    
+    auto windowId = winrt::WindowId{ static_cast<uint64_t>(reinterpret_cast<uint32_t>(window)) };
+    auto search = std::find(m_excludedWindows.begin(), m_excludedWindows.end(), windowId);
+    if (search == m_excludedWindows.end()) 
+    {
+        m_excludedWindows.push_back(windowId);
+    }
+    else
+    {
+        m_excludedWindows.erase(search);
+    }
+    m_capture->UpdateWindowExclusionList(m_excludedWindows);
 }

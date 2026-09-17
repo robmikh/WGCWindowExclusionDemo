@@ -1,7 +1,12 @@
 ﻿#pragma once
 
+// Collision from minwindef min/max and std
+#define NOMINMAX
+
 // Windows
+#include <Unknwn.h>
 #include <windows.h>
+#include <windowsx.h>
 
 // Must come before C++/WinRT
 #include <wil/cppwinrt.h>
@@ -27,6 +32,9 @@
 #include <dxgi1_6.h>
 #include <d2d1_3.h>
 #include <wincodec.h>
+
+// DWM
+#include <dwmapi.h>
 
 // STL
 #include <vector>

@@ -16,6 +16,9 @@ namespace util
 
 int __stdcall WinMain(HINSTANCE, HINSTANCE, PSTR, int)
 {
+    // We use non-virtualized APIs, so let's keep things consistent
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     // Initialize COM
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -23,11 +26,11 @@ int __stdcall WinMain(HINSTANCE, HINSTANCE, PSTR, int)
     auto controller = util::CreateDispatcherQueueControllerForCurrentThread();
 
     // Create our window and visual tree
-    auto window = MainWindow(L"WGCWindowExclusionDemo", 800, 600);
     auto compositor = winrt::Compositor();
-    auto target = window.CreateWindowTarget(compositor);
     auto root = compositor.CreateContainerVisual();
     root.RelativeSizeAdjustment({ 1.0f, 1.0f });
+    auto window = MainWindow(L"WGCWindowExclusionDemo", 800, 600, compositor);
+    auto target = window.CreateWindowTarget(compositor);
     target.Root(root);
 
     // Message pump

@@ -96,6 +96,11 @@ MainWindow::MainWindow(std::wstring const& titleString, int width, int height, w
     m_content.Shadow(shadow);
     m_root.Children().InsertAtTop(m_content);
 
+    // Load cursors
+    m_standardCursor.reset(winrt::check_pointer(LoadCursorW(nullptr, IDC_ARROW)));
+    m_crosshairCursor.reset(winrt::check_pointer(LoadCursorW(nullptr, IDC_CROSS)));
+    m_cursorType = CursorType::Standard;
+
     ShowWindow(m_window, SW_SHOW);
     UpdateWindow(m_window);
 }
@@ -104,6 +109,8 @@ LRESULT MainWindow::MessageHandler(UINT const message, WPARAM const wparam, LPAR
 {
     switch (message)
     {
+    case WM_SETCURSOR:
+        return OnSetCursor();
     case WM_DPICHANGED:
         OnDpiChanged();
         return base_type::MessageHandler(message, wparam, lparam);
@@ -152,12 +159,16 @@ LRESULT MainWindow::WindowSelectionButtonMessageHandler(UINT const message, WPAR
     {
     case WM_LBUTTONDOWN:
         SetCapture(m_windowSelectionButton);
+        m_cursorType = CursorType::Crosshair;
+        OnSetCursor();
         m_cursorCaptured = true;
         m_borderWindow->Show();
         break;
     case WM_LBUTTONUP:
         if (m_cursorCaptured)
         {
+            m_cursorType = CursorType::Standard;
+            OnSetCursor();
             winrt::check_bool(ReleaseCapture());
             m_cursorCaptured = false;
             m_borderWindow->Hide();
@@ -229,4 +240,19 @@ void MainWindow::OnDpiChanged()
     float visualMargin = static_cast<float>((marginY * 2) + controlHeight);
     m_root.Size({ 0.0f, -visualMargin });
     m_root.Offset({ 0.0f, visualMargin, 0.0f });
+}
+
+bool MainWindow::OnSetCursor()
+{
+    switch (m_cursorType)
+    {
+    case CursorType::Standard:
+        SetCursor(m_standardCursor.get());
+        return true;
+    case CursorType::Crosshair:
+        SetCursor(m_crosshairCursor.get());
+        return true;
+    default:
+        return false;
+    }
 }

@@ -5,35 +5,45 @@
 
 struct MainWindow : robmikh::common::desktop::DesktopWindow<MainWindow>
 {
-	static const std::wstring ClassName;
-	MainWindow(
-		std::wstring const& titleString, 
-		int width, 
-		int height, 
-		winrt::Windows::UI::Composition::Compositor const& compositor,
-		winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice const& device);
-	LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
+    static const std::wstring ClassName;
+    MainWindow(
+        std::wstring const& titleString, 
+        int width, 
+        int height, 
+        winrt::Windows::UI::Composition::Compositor const& compositor,
+        winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice const& device);
+    LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
 
 private:
-	static void RegisterWindowClass();
-	static LRESULT SubClassWndProc(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam);
+    enum class CursorType
+    {
+        Standard,
+        Crosshair,
+    };
+
+    static void RegisterWindowClass();
+    static LRESULT SubClassWndProc(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam);
     void CreateControls(HINSTANCE instance);
-	LRESULT WindowSelectionButtonMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
-	void OnWindowSelected(HWND window);
-	void OnDpiChanged();
+    LRESULT WindowSelectionButtonMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
+    void OnWindowSelected(HWND window);
+    void OnDpiChanged();
+    bool OnSetCursor();
 
 private:
-	wil::shared_hfont m_font;
-	std::unique_ptr<SimpleCapture> m_capture;
-	winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget m_target{ nullptr };
-	winrt::Windows::UI::Composition::ContainerVisual m_root{ nullptr };
-	winrt::Windows::UI::Composition::SpriteVisual m_content{ nullptr };
-	std::unique_ptr<robmikh::common::desktop::controls::StackPanel> m_controls;
+    wil::shared_hfont m_font;
+    std::unique_ptr<SimpleCapture> m_capture;
+    winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget m_target{ nullptr };
+    winrt::Windows::UI::Composition::ContainerVisual m_root{ nullptr };
+    winrt::Windows::UI::Composition::SpriteVisual m_content{ nullptr };
+    std::unique_ptr<robmikh::common::desktop::controls::StackPanel> m_controls;
     HWND m_windowSelectionButton = nullptr;
-	WNDPROC m_windowSelectionButtonWndProc = nullptr;
-	std::vector<winrt::Windows::UI::WindowId> m_excludedWindows;
-	std::unique_ptr<BorderWindow> m_borderWindow;
-	HWND m_currentPickerWindow = nullptr;
-	HWND m_currentPickerCandidateWindow = nullptr;
-	bool m_cursorCaptured = false;
+    WNDPROC m_windowSelectionButtonWndProc = nullptr;
+    std::vector<winrt::Windows::UI::WindowId> m_excludedWindows;
+    std::unique_ptr<BorderWindow> m_borderWindow;
+    HWND m_currentPickerWindow = nullptr;
+    HWND m_currentPickerCandidateWindow = nullptr;
+    bool m_cursorCaptured = false;
+    CursorType m_cursorType = CursorType::Standard;
+    wil::unique_hcursor m_standardCursor;
+    wil::unique_hcursor m_crosshairCursor;
 };

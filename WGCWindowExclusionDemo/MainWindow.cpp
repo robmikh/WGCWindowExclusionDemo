@@ -126,8 +126,6 @@ LRESULT MainWindow::MessageHandler(UINT const message, WPARAM const wparam, LPAR
     default:
         return base_type::MessageHandler(message, wparam, lparam);
     }
-
-    return 0;
 }
 
 void MainWindow::CreateControls(HINSTANCE instance)
@@ -225,7 +223,7 @@ LRESULT MainWindow::WindowSelectionButtonMessageHandler(UINT const message, WPAR
 
 void MainWindow::OnWindowSelected(HWND window)
 {
-    auto windowId = winrt::WindowId{ static_cast<uint64_t>(reinterpret_cast<uint32_t>(window)) };
+    auto windowId = winrt::WindowId{ static_cast<uint64_t>(reinterpret_cast<uintptr_t>(window)) };
     auto search = std::find(m_excludedWindows.begin(), m_excludedWindows.end(), windowId);
     if (search == m_excludedWindows.end()) 
     {

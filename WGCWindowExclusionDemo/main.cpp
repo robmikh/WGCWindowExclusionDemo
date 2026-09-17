@@ -5,8 +5,10 @@ namespace winrt
 {
     using namespace Windows::Foundation;
     using namespace Windows::Foundation::Numerics;
+    using namespace Windows::Foundation::Metadata;
     using namespace Windows::UI;
     using namespace Windows::UI::Composition;
+    using namespace Windows::Graphics::Capture;
 }
 
 namespace util
@@ -22,6 +24,20 @@ int __stdcall WinMain(HINSTANCE, HINSTANCE, PSTR, int)
 
     // Initialize COM
     winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+    // Check to see if we're on a supported build
+    auto supported =
+        winrt::GraphicsCaptureSession::IsSupported() &&
+        winrt::ApiInformation::IsMethodPresent(
+            winrt::name_of<winrt::IDisplayGraphicsCaptureSession>(), L"SetWindowExclusionList");
+    if (!supported)
+    {
+        MessageBoxW(nullptr,
+            L"This build of Windows doesn't support the required features for this demo!",
+            L"WGCWindowExclusionDemo",
+            MB_OK | MB_ICONERROR);
+        return 1;
+    }
 
     // Create the DispatcherQueue that the compositor needs to run
     auto controller = util::CreateDispatcherQueueControllerForCurrentThread();

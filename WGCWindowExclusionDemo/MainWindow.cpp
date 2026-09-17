@@ -110,7 +110,14 @@ LRESULT MainWindow::MessageHandler(UINT const message, WPARAM const wparam, LPAR
     switch (message)
     {
     case WM_SETCURSOR:
-        return OnSetCursor();
+        if (OnSetCursor())
+        {
+            return 1;
+        }
+        else
+        {
+            return base_type::MessageHandler(message, wparam, lparam);
+        }
     case WM_DPICHANGED:
         OnDpiChanged();
         return base_type::MessageHandler(message, wparam, lparam);
@@ -160,7 +167,8 @@ LRESULT MainWindow::WindowSelectionButtonMessageHandler(UINT const message, WPAR
     case WM_LBUTTONDOWN:
         SetCapture(m_windowSelectionButton);
         m_cursorType = CursorType::Crosshair;
-        OnSetCursor();
+        m_pendingCursorChange = true;
+        PostMessageW(m_window, WM_SETCURSOR, 0, 0);
         m_cursorCaptured = true;
         m_borderWindow->Show();
         break;
@@ -168,7 +176,8 @@ LRESULT MainWindow::WindowSelectionButtonMessageHandler(UINT const message, WPAR
         if (m_cursorCaptured)
         {
             m_cursorType = CursorType::Standard;
-            OnSetCursor();
+            m_pendingCursorChange = true;
+            PostMessageW(m_window, WM_SETCURSOR, 0, 0);
             winrt::check_bool(ReleaseCapture());
             m_cursorCaptured = false;
             m_borderWindow->Hide();
@@ -244,11 +253,16 @@ void MainWindow::OnDpiChanged()
 
 bool MainWindow::OnSetCursor()
 {
+    auto wasPending = m_pendingCursorChange;
+    m_pendingCursorChange = false;
     switch (m_cursorType)
     {
     case CursorType::Standard:
-        SetCursor(m_standardCursor.get());
-        return true;
+        if (wasPending)
+        {
+            SetCursor(m_standardCursor.get());
+        }
+        return false;
     case CursorType::Crosshair:
         SetCursor(m_crosshairCursor.get());
         return true;

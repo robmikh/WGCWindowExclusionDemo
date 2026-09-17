@@ -44,6 +44,7 @@ private:
     HWND m_currentPickerCandidateWindow = nullptr;
     bool m_cursorCaptured = false;
     CursorType m_cursorType = CursorType::Standard;
+    bool m_pendingCursorChange = false;
     wil::unique_hcursor m_standardCursor;
     wil::unique_hcursor m_crosshairCursor;
 };

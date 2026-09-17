@@ -20,12 +20,15 @@ private:
     void CreateControls(HINSTANCE instance);
 	LRESULT WindowSelectionButtonMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam);
 	void OnWindowSelected(HWND window);
+	void OnDpiChanged();
 
 private:
+	wil::shared_hfont m_font;
 	std::unique_ptr<SimpleCapture> m_capture;
 	winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget m_target{ nullptr };
 	winrt::Windows::UI::Composition::ContainerVisual m_root{ nullptr };
 	winrt::Windows::UI::Composition::SpriteVisual m_content{ nullptr };
+	std::unique_ptr<robmikh::common::desktop::controls::StackPanel> m_controls;
     HWND m_windowSelectionButton = nullptr;
 	WNDPROC m_windowSelectionButtonWndProc = nullptr;
 	std::vector<winrt::Windows::UI::WindowId> m_excludedWindows;

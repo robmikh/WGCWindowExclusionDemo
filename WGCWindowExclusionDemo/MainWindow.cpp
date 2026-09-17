@@ -44,18 +44,22 @@ MainWindow::MainWindow(std::wstring const& titleString, int width, int height, w
     auto exStyle = 0;
     auto style = WS_OVERLAPPEDWINDOW;
 
-    RECT rect = { 0, 0, width, height};
-    winrt::check_bool(AdjustWindowRectEx(&rect, style, false, exStyle));
+    winrt::check_bool(CreateWindowExW(exStyle, ClassName.c_str(), titleString.c_str(), style,
+        CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr, nullptr, instance, this));
+    WINRT_ASSERT(m_window);
+
+    auto dpi = GetDpiForWindow(m_window);
+
+    RECT rect = { 0, 0, width, height };
+    winrt::check_bool(AdjustWindowRectExForDpi(&rect, style, false, exStyle, dpi));
     auto adjustedWidth = rect.right - rect.left;
     auto adjustedHeight = rect.bottom - rect.top;
-
-    winrt::check_bool(CreateWindowExW(exStyle, ClassName.c_str(), titleString.c_str(), style,
-        CW_USEDEFAULT, CW_USEDEFAULT, adjustedWidth, adjustedHeight, nullptr, nullptr, instance, this));
-    WINRT_ASSERT(m_window);
+    winrt::check_bool(SetWindowPos(m_window, nullptr, 0, 0, adjustedWidth, adjustedHeight, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER));
 
     m_borderWindow = std::make_unique<BorderWindow>(compositor);
     m_borderWindow->BorderThickness(5);
 
+    m_font = util::GetFontForDpi(dpi);
     CreateControls(instance);
 
     // Hookup the capture -- The exclusion API only works with display capture,
@@ -66,11 +70,15 @@ MainWindow::MainWindow(std::wstring const& titleString, int width, int height, w
     m_capture->IsBorderRequired(false);
     m_capture->StartCapture();
 
+    uint32_t marginY = MulDiv(10, dpi, 96);
+    uint32_t controlHeight = MulDiv(30, dpi, 96);
+    float visualMargin = static_cast<float>((marginY * 2) + controlHeight);
+
     // Setup our visual tree
     m_root = compositor.CreateContainerVisual();
     m_root.RelativeSizeAdjustment({ 1.0f, 1.0f });
-    m_root.Size({ 0.0f, -60.0f });
-    m_root.Offset({ 0.0f, 60.0f, 0.0f });
+    m_root.Size({ 0.0f, -visualMargin });
+    m_root.Offset({ 0.0f, visualMargin, 0.0f });
     m_target = CreateWindowTarget(compositor);
     m_target.Root(m_root);
     m_content = compositor.CreateSpriteVisual();
@@ -96,6 +104,9 @@ LRESULT MainWindow::MessageHandler(UINT const message, WPARAM const wparam, LPAR
 {
     switch (message)
     {
+    case WM_DPICHANGED:
+        OnDpiChanged();
+        return base_type::MessageHandler(message, wparam, lparam);
     case WM_CTLCOLORSTATIC:
         return util::StaticControlColorMessageHandler(wparam, lparam);
     default:
@@ -107,9 +118,17 @@ LRESULT MainWindow::MessageHandler(UINT const message, WPARAM const wparam, LPAR
 
 void MainWindow::CreateControls(HINSTANCE instance)
 {
-    auto controls = util::StackPanel(m_window, instance, 10, 10, 40, 350, 30);
+    auto dpi = GetDpiForWindow(m_window);
 
-    m_windowSelectionButton = controls.CreateControl(util::ControlType::Button, L"Drag to exclude/include a window");
+    uint32_t marginX = MulDiv(10, dpi, 96);
+    uint32_t marginY = MulDiv(10, dpi, 96);
+    uint32_t stepAmount = MulDiv(40, dpi, 96);
+    uint32_t width = MulDiv(350, dpi, 96);
+    uint32_t height = MulDiv(30, dpi, 96);
+
+    m_controls = std::make_unique<util::StackPanel>(m_window, instance, m_font, marginX, marginY, stepAmount, width, height);
+
+    m_windowSelectionButton = m_controls->CreateControl(util::ControlType::Button, L"Drag to exclude/include a window");
     SetWindowLongPtrW(m_windowSelectionButton, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     m_windowSelectionButtonWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(m_windowSelectionButton, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(SubClassWndProc)));
 }
@@ -197,4 +216,17 @@ void MainWindow::OnWindowSelected(HWND window)
         m_excludedWindows.erase(search);
     }
     m_capture->UpdateWindowExclusionList(m_excludedWindows);
+}
+
+void MainWindow::OnDpiChanged()
+{
+    auto dpi = GetDpiForWindow(m_window);
+    m_font = util::GetFontForDpi(dpi);
+    m_controls->OnDpiChanged(m_font);
+
+    uint32_t marginY = MulDiv(10, dpi, 96);
+    uint32_t controlHeight = MulDiv(30, dpi, 96);
+    float visualMargin = static_cast<float>((marginY * 2) + controlHeight);
+    m_root.Size({ 0.0f, -visualMargin });
+    m_root.Offset({ 0.0f, visualMargin, 0.0f });
 }

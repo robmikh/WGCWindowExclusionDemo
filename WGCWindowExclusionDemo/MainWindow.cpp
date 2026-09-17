@@ -233,7 +233,17 @@ void MainWindow::OnWindowSelected(HWND window)
     {
         m_excludedWindows.erase(search);
     }
-    m_capture->UpdateWindowExclusionList(m_excludedWindows);
+    if (!m_capture->UpdateWindowExclusionList(m_excludedWindows))
+    {
+        // This build of Windows must not have the feature enabled. Show a popup
+        // and disable the button.
+        EnableWindow(m_windowSelectionButton, false);
+        MessageBoxW(
+            m_window,
+            L"This build of Windows doesn't support the required features for this demo!",
+            L"WGCWindowExclusionDemo",
+            MB_OK | MB_ICONERROR);
+    }
 }
 
 void MainWindow::OnDpiChanged()

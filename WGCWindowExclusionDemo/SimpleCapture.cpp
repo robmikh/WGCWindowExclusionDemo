@@ -59,11 +59,18 @@ winrt::ICompositionSurface SimpleCapture::CreateSurface(winrt::Compositor const&
     return util::CreateCompositionSurfaceForSwapChain(compositor, m_swapChain.get());
 }
 
-void SimpleCapture::UpdateWindowExclusionList(std::vector<winrt::Windows::UI::WindowId> const& windowsToExclude)
+bool SimpleCapture::UpdateWindowExclusionList(std::vector<winrt::Windows::UI::WindowId> const& windowsToExclude)
 {
     if (auto displaySession = m_session.try_as<winrt::IDisplayGraphicsCaptureSession>())
     {
         displaySession.SetWindowExclusionList(windowsToExclude);
+        return true;
+    }
+    else
+    {
+        // In our case, we always are capturing a display. So if the QI fails, that
+        // means that this build of Windows doesn't have the feature enabled yet.
+        return false;
     }
 }
 

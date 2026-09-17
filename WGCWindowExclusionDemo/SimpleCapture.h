@@ -30,7 +30,7 @@ public:
         m_pixelFormatUpdate.exchange(newFormat);
     }
 
-    void UpdateWindowExclusionList(std::vector<winrt::Windows::UI::WindowId> const& windowsToExclude);
+    bool UpdateWindowExclusionList(std::vector<winrt::Windows::UI::WindowId> const& windowsToExclude);
 
     winrt::Windows::Foundation::TimeSpan MinUpdateInterval() { CheckClosed(); return m_session.MinUpdateInterval(); }
     void MinUpdateInterval(winrt::Windows::Foundation::TimeSpan value) { CheckClosed(); m_session.MinUpdateInterval(value); }
